@@ -29,9 +29,6 @@ export class PineconeService {
         includeValues: false,
     });
 
-    // const queryResponse = await index.query({ queryRequest });
-    // queryResponse.matches es un array con los vectores y metadatos más similares
-
     return queryResponse.matches;
     }
 }

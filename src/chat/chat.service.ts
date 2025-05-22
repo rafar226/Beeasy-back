@@ -10,7 +10,6 @@ export class ChatService {
     private readonly pineconeService: PineconeService,
   ) {}
 
-  // Genera embedding de consulta y obtiene top k vectores de Pinecone
   async queryRelevantChunks(query: string, topK = 3) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     const embeddingResponse = await axios.post(
@@ -29,10 +28,8 @@ export class ChatService {
 
     const queryEmbedding = embeddingResponse.data.data[0].embedding;
 
-    // Consultar Pinecone con el embedding generado
     const results = await this.pineconeService.querySimilarVectors(queryEmbedding, topK);
 
-    // results tendrá los vectores más relevantes con sus metadatos
     return results;
   }
 
@@ -81,8 +78,6 @@ export class ChatService {
 
     return this.generateAnswer(context, query);
     }
-
-    // private conversationHistory: { role: 'user' | 'assistant'; content: string }[] = [];
 
     async answerWithContext(query: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
     const relevantChunks = await this.queryRelevantChunks(query);

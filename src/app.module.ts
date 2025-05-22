@@ -15,7 +15,6 @@ import { ChatModule } from './chat/chat.module';
   providers: [AppService],
 })
 
-// @Injectable()
 export class AppModule {
     constructor(private configService: ConfigService) {}
 
