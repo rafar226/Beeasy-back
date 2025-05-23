@@ -10,7 +10,7 @@ export class ChatService {
     private readonly pineconeService: PineconeService,
   ) {}
 
-  async queryRelevantChunks(query: string, topK = 3) {
+  async queryRelevantChunks(query: string, userId: string, topK = 3 ) {
     const apiKey = this.configService.get<string>('OPENAI_API_KEY');
     const embeddingResponse = await axios.post(
       'https://api.openai.com/v1/embeddings',
@@ -28,7 +28,7 @@ export class ChatService {
 
     const queryEmbedding = embeddingResponse.data.data[0].embedding;
 
-    const results = await this.pineconeService.querySimilarVectors(queryEmbedding, topK);
+    const results = await this.pineconeService.querySimilarVectors(queryEmbedding, topK, userId);
 
     return results;
   }
@@ -68,19 +68,19 @@ export class ChatService {
     return response.data.choices[0].message.content.trim();
     }
 
-    async answerQuestion(query: string): Promise<string> {
-    const relevantChunks = await this.queryRelevantChunks(query);
+    // async answerQuestion(query: string, userId: string): Promise<string> {
+    //   const relevantChunks = await this.queryRelevantChunks(query, userId);
 
-    const context = relevantChunks.map((r) => {
-        const chunk = r.metadata?.chunk;
-        return typeof chunk === 'string' ? chunk : String(chunk ?? '');
-    });
+    //   const context = relevantChunks.map((r) => {
+    //       const chunk = r.metadata?.chunk;
+    //       return typeof chunk === 'string' ? chunk : String(chunk ?? '');
+    //   });
 
-    return this.generateAnswer(context, query);
-    }
+    //   return this.generateAnswer(context, query);
+    // }
 
-    async answerWithContext(query: string, history: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
-    const relevantChunks = await this.queryRelevantChunks(query);
+    async answerWithContext(query: string, history: { role: 'user' | 'assistant'; content: string }[], userId: string): Promise<string> {
+    const relevantChunks = await this.queryRelevantChunks(query, userId);
 
     const context = relevantChunks.map((r) => {
         const chunk = r.metadata?.chunk;

@@ -1,4 +1,5 @@
 import {
+  Body,
   Controller,
   Post,
   UploadedFile,
@@ -15,9 +16,11 @@ export class FileUploadController {
   @Post()
   @UseInterceptors(FileInterceptor('file'))
 
-  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+  async uploadFile(
+      @UploadedFile() file: Express.Multer.File,
+      @Body('userId') userId: string) {
     console.log('ingreso')
-    const result = await this.uploadService.handleFile(file);
+    const result = await this.uploadService.handleFile(file, userId);
     return { success: true, result };
   }
 

@@ -11,7 +11,7 @@ export class UploadService {
     private readonly pineconeService: PineconeService,
   ) {}
 
-  async handleFile(file: Express.Multer.File) {
+  async handleFile(file: Express.Multer.File, userId: string) {
     const text = file.buffer.toString('utf-8');
     const chunks = this.chunkText(text, 1000);
     const embeddings = await this.generateEmbeddings(chunks);
@@ -23,10 +23,11 @@ export class UploadService {
         chunk: chunks[index],
         fileName: file.originalname,
         uploadedAt: Date.now(),
+        userId: userId,
       },
     }));
 
-    await this.pineconeService.upsertEmbeddings(vectors);
+    await this.pineconeService.upsertEmbeddings(vectors, userId);
 
     return {
       chunksCount: chunks.length,

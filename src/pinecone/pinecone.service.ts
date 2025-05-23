@@ -14,21 +14,32 @@ export class PineconeService {
         this.indexName = this.configService.get<string>('PINECONE_INDEX') || '';
     }
 
-    async upsertEmbeddings(vectors: PineconeRecord<Record<string, string | number | boolean>>[]) {
+    // async upsertEmbeddings(vectors: PineconeRecord<Record<string, string | number | boolean>>[]) {
+    //     const index = this.pinecone.Index(this.indexName);
+    //     await index.upsert(vectors);
+    // }
+
+    async upsertEmbeddings(
+        vectors: PineconeRecord<Record<string, string | number | boolean>>[],
+        namespace: string,
+        ) {
         const index = this.pinecone.Index(this.indexName);
-        await index.upsert(vectors);
+
+        await index.namespace(namespace).upsert(vectors);
     }
 
-    async querySimilarVectors(queryEmbedding: number[], topK: number) {
-    const index = this.pinecone.Index(this.indexName);
+    async querySimilarVectors(queryEmbedding: number[], topK: number, userId) {
+        const index = this.pinecone.Index(this.indexName);
 
-    const queryResponse = await index.query({
-        vector: queryEmbedding,
-        topK,
-        includeMetadata: true,
-        includeValues: false,
-    });
+        const queryResponse = await index
+        .namespace(userId)
+        .query({
+            vector: queryEmbedding,
+            topK,
+            includeMetadata: true,
+            includeValues: false,
+        });
 
-    return queryResponse.matches;
+        return queryResponse.matches;
     }
 }
