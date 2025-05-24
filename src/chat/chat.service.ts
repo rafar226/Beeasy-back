@@ -68,61 +68,114 @@ export class ChatService {
     return response.data.choices[0].message.content.trim();
     }
 
-    // async answerQuestion(query: string, userId: string): Promise<string> {
-    //   const relevantChunks = await this.queryRelevantChunks(query, userId);
 
-    //   const context = relevantChunks.map((r) => {
-    //       const chunk = r.metadata?.chunk;
-    //       return typeof chunk === 'string' ? chunk : String(chunk ?? '');
-    //   });
+async answerWithContext(
+  query: string,
+  history: { role: 'user' | 'assistant'; content: string }[],
+  userId: string,
+  options?: {
+    defaultTone?: string;
+    rolePrompt?: string;
+    defaultInstructions?: string[];
+  }
+): Promise<string> {
+  const relevantChunks = await this.queryRelevantChunks(query, userId);
 
-    //   return this.generateAnswer(context, query);
-    // }
+  const context = relevantChunks.map((r) => {
+    const chunk = r.metadata?.chunk;
+    return typeof chunk === 'string' ? chunk : String(chunk ?? '');
+  });
 
-    async answerWithContext(query: string, history: { role: 'user' | 'assistant'; content: string }[], userId: string): Promise<string> {
-    const relevantChunks = await this.queryRelevantChunks(query, userId);
+  const systemParts: string[] = [];
 
-    const context = relevantChunks.map((r) => {
-        const chunk = r.metadata?.chunk;
-        return typeof chunk === 'string' ? chunk : String(chunk ?? '');
-    });
+  if (options?.rolePrompt) {
+    systemParts.push(options.rolePrompt);
+  }
 
-    const prompt = `
-    You are an assistant that answers questions based only on the provided context and conversation history.
-    Be concise and helpful.
+  if (options?.defaultTone) {
+    systemParts.push(`Responde con un tono ${options.defaultTone}.`);
+  }
 
-    Context:
-    ${context.join('\n\n')}
+  if (options?.defaultInstructions?.length) {
+    systemParts.push(...options.defaultInstructions);
+  }
 
-    Conversation History:
-    ${history.map(m => `${m.role}: ${m.content}`).join('\n')}
+  // Incluye el contexto
+  if (context.length) {
+    systemParts.push(`Basado exclusivamente en el siguiente contexto:\n${context.join('\n\n')}`);
+  }
 
-    User: ${query}
-    Assistant:
-    `.trim();
-
-    const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-        model: 'gpt-3.5-turbo',
-        messages: [
-            { role: 'system', content: 'You are a helpful assistant answering only from the provided context and history.' },
-            ...history,
-            { role: 'user', content: prompt }
-        ],
-        temperature: 0.3,
-        },
-        {
-        headers: {
-            Authorization: `Bearer ${this.configService.get('OPENAI_API_KEY')}`,
-            'Content-Type': 'application/json',
-        },
-        },
-    );
-
-    return response.data.choices[0].message.content.trim();
+  const systemPrompt = systemParts.join('\n\n');
+  console.log('systemPrompt', systemPrompt)
+  const response = await axios.post(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: systemPrompt },
+        ...history,
+        { role: 'user', content: query }
+      ],
+      temperature: 0.3,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${this.configService.get('OPENAI_API_KEY')}`,
+        'Content-Type': 'application/json',
+      },
     }
+  );
+
+  return response.data.choices[0].message.content.trim();
+}
 
 
 
+    // async answerWithContext(
+    //   query: string, 
+    //   history: { role: 'user' | 'assistant'; content: string }[], 
+    //   userId: string
+    // ): Promise<string> {
+    // const relevantChunks = await this.queryRelevantChunks(query, userId);
+
+    // const context = relevantChunks.map((r) => {
+    //     const chunk = r.metadata?.chunk;
+    //     return typeof chunk === 'string' ? chunk : String(chunk ?? '');
+    // });
+
+    // const prompt = `
+    // You are an assistant that answers questions based only on the provided context and conversation history.
+    // Be concise and helpful.
+
+    // Context:
+    // ${context.join('\n\n')}
+
+    // Conversation History:
+    // ${history.map(m => `${m.role}: ${m.content}`).join('\n')}
+
+    // User: ${query}
+    // Assistant:
+    // `.trim();
+
+    // const response = await axios.post(
+    //     'https://api.openai.com/v1/chat/completions',
+    //     {
+    //     model: 'gpt-3.5-turbo',
+    //     messages: [
+    //         { role: 'system', content: 'You are a helpful assistant answering only from the provided context and history.' },
+    //         ...history,
+    //         { role: 'user', content: prompt }
+    //     ],
+    //     temperature: 0.3,
+    //     },
+    //     {
+    //     headers: {
+    //         Authorization: `Bearer ${this.configService.get('OPENAI_API_KEY')}`,
+    //         'Content-Type': 'application/json',
+    //     },
+    //     },
+    // );
+
+    //   return response.data.choices[0].message.content.trim();
+    // }
 }
